@@ -1,12 +1,100 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Switch, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 
-export default function Notifications() {
+// Request notification permissions and set notification handler
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+export default function NotificationsScreen() {
   const [dailyReminder, setDailyReminder] = useState(true);
   const [weeklyReminder, setWeeklyReminder] = useState(true);
   const [monthlyReminder, setMonthlyReminder] = useState(false);
+
+  // Request notification permissions when component mounts
+  useEffect(() => {
+    (async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('نحتاج إلى إذن الإشعارات لإرسال التذكيرات');
+      }
+    })();
+  }, []);
+
+  // Load notification settings from AsyncStorage
+  useEffect(() => {
+    const loadNotificationSettings = async () => {
+      try {
+        const daily = await AsyncStorage.getItem('daily_reminder');
+        const weekly = await AsyncStorage.getItem('weekly_reminder');
+        const monthly = await AsyncStorage.getItem('monthly_reminder');
+        
+        if (daily !== null) setDailyReminder(daily === 'true');
+        if (weekly !== null) setWeeklyReminder(weekly === 'true');
+        if (monthly !== null) setMonthlyReminder(monthly === 'true');
+      } catch (error) {
+        console.error('Error loading notification settings:', error);
+      }
+    };
+
+    loadNotificationSettings();
+  }, []);
+
+  // Save notification settings to AsyncStorage
+  const saveNotificationSetting = async (key: string, value: boolean) => {
+    try {
+      await AsyncStorage.setItem(key, value.toString());
+    } catch (error) {
+      console.error('Error saving notification setting:', error);
+    }
+  };
+
+  // Handle notification toggle changes
+  const handleDailyReminderToggle = (value: boolean) => {
+    setDailyReminder(value);
+    saveNotificationSetting('daily_reminder', value);
+    
+    if (value) {
+      Alert.alert(
+        'تم تفعيل التذكير',
+        'سيتم إرسال تذكير يومي بالاستغفار كل يوم في الساعة 9 صباحاً'
+      );
+    }
+  };
+
+  const handleWeeklyReminderToggle = (value: boolean) => {
+    setWeeklyReminder(value);
+    saveNotificationSetting('weekly_reminder', value);
+    
+    if (value) {
+      Alert.alert(
+        'تم تفعيل التذكير',
+        'سيتم إرسال تقرير أسبوعي عن مرات الاستغفار'
+      );
+    }
+  };
+
+  const handleMonthlyReminderToggle = (value: boolean) => {
+    setMonthlyReminder(value);
+    saveNotificationSetting('monthly_reminder', value);
+    
+    if (value) {
+      Alert.alert(
+        'تم تفعيل التذكير',
+        'سيتم إرسال تقرير شهري عن مرات الاستغفار'
+      );
+    }
+  };
 
   return (
     <View style={styles.backgroundContainer}>
@@ -27,7 +115,7 @@ export default function Notifications() {
               </View>
               <Switch
                 value={dailyReminder}
-                onValueChange={setDailyReminder}
+                onValueChange={handleDailyReminderToggle}
                 trackColor={{ false: '#767577', true: '#38a169' }}
                 thumbColor={dailyReminder ? '#f4f3f4' : '#f4f3f4'}
               />
@@ -40,7 +128,7 @@ export default function Notifications() {
               </View>
               <Switch
                 value={weeklyReminder}
-                onValueChange={setWeeklyReminder}
+                onValueChange={handleWeeklyReminderToggle}
                 trackColor={{ false: '#767577', true: '#38a169' }}
                 thumbColor={weeklyReminder ? '#f4f3f4' : '#f4f3f4'}
               />
@@ -53,7 +141,7 @@ export default function Notifications() {
               </View>
               <Switch
                 value={monthlyReminder}
-                onValueChange={setMonthlyReminder}
+                onValueChange={handleMonthlyReminderToggle}
                 trackColor={{ false: '#767577', true: '#38a169' }}
                 thumbColor={monthlyReminder ? '#f4f3f4' : '#f4f3f4'}
               />

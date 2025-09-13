@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -186,16 +187,50 @@ export default function Istighfar() {
   const scale = useRef(new Animated.Value(1)).current;
   const router = useRouter();
 
+  // Load count from AsyncStorage when component mounts
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const savedCount = await AsyncStorage.getItem('istighfar_count');
+        if (savedCount !== null) {
+          setCount(parseInt(savedCount, 10));
+        }
+      } catch (error) {
+        console.error('Error loading count from AsyncStorage:', error);
+      }
+    };
+
+    loadCount();
+  }, []);
+
+  // Save count to AsyncStorage whenever it changes
+  useEffect(() => {
+    const saveCount = async () => {
+      try {
+        await AsyncStorage.setItem('istighfar_count', count.toString());
+        
+        // Update daily statistics
+        const today = new Date().toISOString().split('T')[0]; // Get date in YYYY-MM-DD format
+        const dailyStats = await AsyncStorage.getItem(`daily_stats_${today}`);
+        const currentDailyCount = dailyStats ? parseInt(dailyStats, 10) : 0;
+        
+        await AsyncStorage.setItem(`daily_stats_${today}`, (currentDailyCount + 1).toString());
+      } catch (error) {
+        console.error('Error saving count to AsyncStorage:', error);
+      }
+    };
+
+    saveCount();
+  }, [count]);
+
   // Calculate responsive sizes
   const buttonSize = width * 0.45 > 220 ? 220 : width * 0.45;
   const counterSize = width * 0.25 > 80 ? 80 : width * 0.25;
 
   // Memoize the press handler functions for better performance
   const handlePress = useCallback(() => {
-    // Add haptic feedback with error handling
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(error => 
-      console.warn('Haptics error:', error)
-    );
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     setCount(prevCount => prevCount + 1);
     
@@ -217,10 +252,8 @@ export default function Istighfar() {
   }, [scale]);
 
   const handleReset = useCallback(() => {
-    // Add haptic feedback with error handling
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(error => 
-      console.warn('Haptics error:', error)
-    );
+    // Add haptic feedback for reset
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     // Add a small animation when resetting
     setCount(0);
@@ -239,21 +272,8 @@ export default function Istighfar() {
     ]).start();
   }, [scale]);
 
-  const handleSettings = useCallback(async () => {
-    try {
-      // Check if the settings screen exists before navigating
-      const screenExists = await router.canGoBack(); // This is a simple way to check if navigation is possible
-      
-      if (screenExists) {
-        router.push('/settings');
-      } else {
-        console.warn('Settings screen not found');
-        // You could show an error message to the user here
-      }
-    } catch (error) {
-      console.error('Navigation error:', error);
-      // Handle the error appropriately
-    }
+  const handleSettings = useCallback(() => {
+    router.push('/settings');
   }, [router]);
 
   return (
