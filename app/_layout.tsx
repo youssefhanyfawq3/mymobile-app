@@ -20,6 +20,7 @@ export default function RootLayout() {
 
   return (
     <Stack
+      initialRouteName="index"
       screenOptions={{
         headerStyle: {
           backgroundColor: '#1a202c',
@@ -36,27 +37,45 @@ export default function RootLayout() {
           fontSize: 16,
         },
         headerShadowVisible: false,
-        animation: 'fade', // Use fade animation for smoother transitions
+        animation: 'fade',
       }}
     >
       <Stack.Screen 
         name="index" 
         options={{ 
           headerShown: false,
-          contentStyle: {
-            backgroundColor: '#1a202c',
-          },
         }} 
       />
       <Stack.Screen
         name="Istighfar"
         options={{
-          title: 'استغفار',
+          title: '',
           headerShown: true,
           headerBackTitle: 'رجوع',
-          contentStyle: {
-            backgroundColor: '#1a202c',
-          },
+        }}
+      />
+      <Stack.Screen
+        name="settings"
+        options={{
+          title: 'الإعدادات',
+          headerShown: true,
+          headerBackTitle: 'رجوع',
+        }}
+      />
+      <Stack.Screen
+        name="statistics"
+        options={{
+          title: '',
+          headerShown: true,
+          headerBackTitle: 'رجوع',
+        }}
+      />
+      <Stack.Screen
+        name="notifications"
+        options={{
+          title: '',
+          headerShown: true,
+          headerBackTitle: 'رجوع',
         }}
       />
     </Stack>

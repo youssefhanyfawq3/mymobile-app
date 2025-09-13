@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions, Easing 
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { Feather } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
@@ -186,13 +187,15 @@ export default function Istighfar() {
   const router = useRouter();
 
   // Calculate responsive sizes
-  const buttonSize = width * 0.4 > 200 ? 200 : width * 0.4;
-  const counterSize = width * 0.2 > 72 ? 72 : width * 0.2;
+  const buttonSize = width * 0.45 > 220 ? 220 : width * 0.45;
+  const counterSize = width * 0.25 > 80 ? 80 : width * 0.25;
 
   // Memoize the press handler functions for better performance
   const handlePress = useCallback(() => {
-    // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Add haptic feedback with error handling
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(error => 
+      console.warn('Haptics error:', error)
+    );
     
     setCount(prevCount => prevCount + 1);
     
@@ -214,8 +217,10 @@ export default function Istighfar() {
   }, [scale]);
 
   const handleReset = useCallback(() => {
-    // Add haptic feedback for reset
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Add haptic feedback with error handling
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(error => 
+      console.warn('Haptics error:', error)
+    );
     
     // Add a small animation when resetting
     setCount(0);
@@ -234,10 +239,32 @@ export default function Istighfar() {
     ]).start();
   }, [scale]);
 
+  const handleSettings = useCallback(async () => {
+    try {
+      // Check if the settings screen exists before navigating
+      const screenExists = await router.canGoBack(); // This is a simple way to check if navigation is possible
+      
+      if (screenExists) {
+        router.push('/settings');
+      } else {
+        console.warn('Settings screen not found');
+        // You could show an error message to the user here
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Handle the error appropriately
+    }
+  }, [router]);
+
   return (
     <View style={styles.backgroundContainer}>
       <SnowfallBackground />
       <SafeAreaView style={styles.container}>
+        {/* Settings button */}
+        <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
+          <Feather name="settings" size={24} color="white" />
+        </TouchableOpacity>
+        
         <Text style={[styles.counter, { fontSize: counterSize }]} accessibilityRole="header">
           {count.toLocaleString()}
         </Text>
@@ -254,7 +281,7 @@ export default function Istighfar() {
             accessibilityRole="button"
             activeOpacity={0.7}
           >
-            <Text style={[styles.buttonText, { fontSize: buttonSize * 0.15 }]}>استغفر الله</Text>
+            <Text style={[styles.buttonText, { fontSize: buttonSize * 0.12 }]}>استغفر الله</Text>
           </TouchableOpacity>
         </Animated.View>
         
@@ -265,6 +292,7 @@ export default function Istighfar() {
           accessibilityRole="button"
           activeOpacity={0.7}
         >
+          <Feather name="refresh-ccw" size={20} color="white" style={styles.resetIcon} />
           <Text style={styles.resetButtonText}>إعادة تعيين</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -306,6 +334,15 @@ const styles = StyleSheet.create({
     padding: 16,
     zIndex: 2,
   },
+  settingsButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    zIndex: 3,
+    backgroundColor: 'rgba(56, 161, 105, 0.3)',
+    borderRadius: 20,
+    padding: 12,
+  },
   counter: {
     fontWeight: 'bold',
     color: '#38a169',
@@ -337,6 +374,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 40,
     paddingVertical: 12,
     paddingHorizontal: 24,
@@ -351,6 +390,9 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
     zIndex: 2,
+  },
+  resetIcon: {
+    marginRight: 8,
   },
   resetButtonText: {
     fontSize: 18,
